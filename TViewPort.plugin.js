@@ -2,13 +2,15 @@ module.exports = class TViewPort {
   /* ---- BetterStremio defined methods ---- */
   bsBlock = true;
   getName = () => "TViewPort";
-  getImage = () => BetterStremio.host + "/src/img/tviewport.png";
+  getImage = () =>
+    "https://raw.githubusercontent.com/MateusAquino/TViewPort/main/logo.png";
   getDescription = () =>
     "A better Stremio experience for SmartTVs. Improve the default Web Stremio experience with a TV-friendly layout.";
   getVersion = () => "1.0.0";
   getAuthor = () => "MateusAquino";
-  getShareURL = () => "";
-  getUpdateURL = () => "";
+  getShareURL = () => "https://github.com/MateusAquino/TViewPort";
+  getUpdateURL = () =>
+    "https://raw.githubusercontent.com/MateusAquino/TViewPort/main/TViewPort.plugin.js";
   onBoot = () => {};
   onReady = () => {
     document.body.classList.add("tv-viewport");
@@ -31,7 +33,8 @@ module.exports = class TViewPort {
           item === false
             ? {
                 name: BetterStremio.StremioRoot.translate("BUTTON_SEE_ALL"),
-                background: BetterStremio.host + "/src/img/discovery.png",
+                background:
+                  "https://raw.githubusercontent.com/MateusAquino/TViewPort/main/discovery.png",
                 description: BetterStremio.StremioRoot.translate(
                   "WEBSITE_FEATURES_DISCOVER_P"
                 ),
