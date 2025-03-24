@@ -17,6 +17,10 @@ module.exports = class TViewPort {
     window.TViewPort = {
       inactiveIters: 0,
       cinemetaCache: {},
+      openCustomSelect: this.openCustomSelect,
+      updateSelectAndClose: this.updateSelectAndClose,
+      updateInputColorAndClose: this.updateInputColorAndClose,
+      openCustomColorGridPicker: this.openCustomColorGridPicker,
       applyShortcut: (id) =>
         window.BetterStremio.Modules.shortcuts
           .getShortcuts()
@@ -96,23 +100,24 @@ module.exports = class TViewPort {
         const episode = item.episode ? `E${item.episode}` : "";
         const seasonEpisode = `${season} ${episode}`.trim();
         const itemRuntime = item.runtime ? item.runtime : seasonEpisode;
-        const itemDesc = item.description
-          ? item.description
-          : (item.episode && item.title
-              ? `New Episode: ${item.title}`
-              : ""
-            ).trim();
+        const itemDesc = item.description ? item.description : "".trim();
+        const itemGenres = item.genres?.join?.(" | ");
+        const itemCast = item.cast?.join?.(", ");
+        const yearToDisplay =
+          !itemDesc && !itemGenres && !itemCast && !itemRuntime
+            ? ""
+            : yearParsed;
         name.innerText = item.name ? item.name : "Unknown";
         runtime.innerText = itemRuntime?.replace?.(" ", "");
         runtime.style = itemRuntime ? "" : "display: none";
-        year.innerText = yearParsed;
-        year.style = yearParsed ? "" : "display: none";
-        genres.innerText = item.genres?.join?.(" | ");
-        genres.style = item.genres ? "" : "display: none";
+        year.innerText = yearToDisplay;
+        year.style = yearToDisplay ? "" : "display: none";
+        genres.innerText = itemGenres;
+        genres.style = itemGenres ? "" : "display: none";
         desc.innerText = itemDesc;
         desc.style = itemDesc ? "" : "display: none";
-        cast.innerText = item.cast?.join?.(", ");
-        cast.style = item.cast ? "" : "display: none";
+        cast.innerText = itemCast;
+        cast.style = itemCast ? "" : "display: none";
         const itemBackground = item.background
           ? item.background.replace("/small/", "/medium/")
           : item.poster
@@ -123,6 +128,68 @@ module.exports = class TViewPort {
           : "";
       },
       mappedFocus: [
+        {
+          from: ".episodes-list li",
+          key: "ArrowUp",
+          to: '.episodes-list li,[name="season"],#bs-close-sidebar',
+        },
+        {
+          from: '[name="season"]',
+          key: "ArrowUp",
+          to: "#bs-close-sidebar",
+        },
+        {
+          from: "#bs-close-sidebar",
+          key: "ArrowUp",
+          to: false,
+        },
+        {
+          from: ".links > a",
+          key: "ArrowUp",
+          to: ".links > a, #bs-close-sidebar",
+        },
+        {
+          from: ".links > a",
+          key: "ArrowLeft",
+          to: ".links > a",
+          allowChild: true,
+        },
+        {
+          from: ".links > a",
+          key: "ArrowRight",
+          to: ".links > a",
+          allowChild: true,
+        },
+        {
+          from: ".links > a",
+          key: "ArrowDown",
+          to: ".links > a",
+        },
+        {
+          from: ".episodes-list li",
+          key: "ArrowDown",
+          to: ".episodes-list li",
+        },
+        {
+          from: '.episodes-list li,[name="season"],#bs-close-sidebar',
+          key: "ArrowLeft",
+          to: "#bs-close-sidebar",
+        },
+        {
+          from: '.episodes-list li,[name="season"],#bs-close-sidebar',
+          key: "ArrowRight",
+          to: false,
+        },
+        {
+          from: ".tv-custom-select-container,.tv-custom-color-container",
+          key: "ArrowUp",
+          to: false,
+        },
+        {
+          from: ".tv-custom-select-container,.tv-custom-color-container",
+          key: "ArrowDown",
+          to: false,
+        },
         {
           from: "#volumeControl",
           key: "ArrowUp",
@@ -286,7 +353,7 @@ module.exports = class TViewPort {
         {
           from: "#navbar .tab",
           key: "ArrowRight",
-          to: "#board .board-container li .board-row li:first-child,#discover .content .items li:first-child,#library .items li:first-child",
+          to: "#board .board-container li .board-row li:first-child,#discover .content .items li:first-child,#library .items li:first-child, #settingsPage > div.sections > nav > a",
         },
         {
           from: ".filters .segments li",
@@ -294,12 +361,27 @@ module.exports = class TViewPort {
           to: ".filters .segments li, #navbar .tab.selected",
         },
         {
+          from: "div .segments li",
+          key: "ArrowUp",
+          to: "div .segments li",
+        },
+        {
           from: ".filters .segments li",
           key: "ArrowRight",
+          to: ".filters .segments li,[name='selectedType'],.addon-search",
+        },
+        {
+          from: "[name='selectedType']",
+          key: "ArrowRight",
+          to: ".segments li,[name='selectedType'],.addon-search",
+        },
+        {
+          from: "[name='selectedType']",
+          key: "ArrowLeft",
           to: ".filters .segments li",
         },
         {
-          from: `.filters .segments li`,
+          from: `div .segments li`,
           key: "ArrowDown",
           to: `#addons-list .addon:first-child, [ng-repeat="type in ['plugins', 'themes']"] .addon:first-child`,
         },
@@ -325,9 +407,34 @@ module.exports = class TViewPort {
           to: `.configure, .bs-update`,
         },
         {
+          from: `#settingsPage > div.sections > nav > a`,
+          key: "ArrowRight",
+          to: `select,input[type="checkbox"],a[ng-click="logout()"]`,
+        },
+        {
+          from: `#settingsPanel *:not(.settings-container .settings-panel .ro-copy-text-container button, .tv-custom-color-container)`,
+          key: "ArrowLeft",
+          to: `#settingsPage > div.sections > nav > a:first-child`,
+        },
+        {
+          from: `.settings-container .settings-panel .account .info a`,
+          key: "ArrowDown",
+          to: `.settings-container .settings-panel section .category .setting select`,
+        },
+        {
+          from: `.settings-container .settings-panel section:nth-child(1) .category:nth-child(2) .setting select`,
+          key: "ArrowUp",
+          to: `.settings-container .settings-panel .account .info a`,
+        },
+        {
+          from: `[name="streamingServerUrl"]`,
+          key: "ArrowUp",
+          to: `input[type="checkbox"]`,
+        },
+        {
           from: `#addons-list .addon, [ng-repeat="type in ['plugins', 'themes']"] .addon`,
           key: "ArrowUp",
-          to: `#addons-list .addon, [ng-repeat="type in ['plugins', 'themes']"] .addon,.filters:first-child .segments li:first-child`,
+          to: `#addons-list .addon, [ng-repeat="type in ['plugins', 'themes']"] .addon,div:first-child .segments li:first-child`,
         },
         {
           from: '[ng-model="selected.addon"]',
@@ -368,7 +475,7 @@ module.exports = class TViewPort {
         {
           from: "body:not(.immersed)",
           key: "ArrowUp",
-          to: '#global-search-field, [ng-click="goBack()"], #discover-filters > div > select, #libraryFilters > div > select, .filters .segments li',
+          to: '#global-search-field, [ng-click="goBack()"], #discover-filters > div > select, #libraryFilters > div > select, div .segments li',
           allowChild: true,
         },
         {
@@ -572,6 +679,22 @@ module.exports = class TViewPort {
           setTimeout(() => window.TViewPort.applyShortcut(key), 0);
         }
       };
+      ctrl.focusPlayPause = () => {
+        let maxTries = (1000 / 50) * 8;
+        const interval = setInterval(() => {
+          const selector = `.control:not(.ng-hide)[ng-show^="player.isComponentVisible('playpause')"]`;
+          const isFocused = document.querySelector(`${selector}:focus`);
+          if (!isFocused) {
+            document.querySelector(selector)?.focus();
+            clearInterval(interval);
+            ctrl.$evalAsync();
+          } else if (maxTries > 0) {
+            maxTries--;
+          } else {
+            clearInterval(interval);
+          }
+        }, 50);
+      };
     });
 
     BetterStremio.monkeyPatch(
@@ -584,14 +707,36 @@ module.exports = class TViewPort {
       (ctrl) => (ctrl.displayInfo = window.TViewPort.displayInfo)
     );
 
+    BetterStremio.monkeyPatch(
+      "settingsPageCtrl",
+      (ctrl) =>
+        (ctrl.scrollToTop = () =>
+          document.querySelector("#settingsPanel").scrollTo(0, 0))
+    );
+
     const detailTpl = document.querySelector("#detailTpl");
     detailTpl.innerHTML = detailTpl.innerHTML.replace(
       /(ng-show\s*=\s*"showReceiveNotifCheckbox()\b)/g,
       'tabindex="-1" $1'
     );
 
+    const calendarTpl = document.querySelector("#calendarTpl");
+    calendarTpl.innerHTML = calendarTpl.innerHTML.replace(
+      /(ng-click\s*=\s*"openEpisode\b)/g,
+      'tabindex="-1" $1'
+    );
+
+    const settingsTpl = document.querySelector("#settingsTpl");
+    settingsTpl.innerHTML = settingsTpl.innerHTML
+      .replace(
+        /<div[^\/]*?fbImport.*?class="category"/g,
+        '<div class="category"'
+      )
+      .replace(/(ng-click\s*=\s*"logout)/g, 'ng-focus="scrollToTop()" $1');
+
     const playerTpl = document.querySelector("#playerTpl");
     playerTpl.innerHTML = playerTpl.innerHTML
+      .replace(/(player\.paused = !player\.paused)/g, "$1; focusPlayPause()")
       .replace(/(class\s*=\s*"control\b)/g, 'tabindex="-1" $1')
       .replace(/(ng-click\s*=\s*"incDelay\b)/g, 'tabindex="-1" $1')
       .replace(/(ng-click\s*=\s*"subSizeUp\b)/g, 'tabindex="-1" $1')
@@ -642,7 +787,7 @@ module.exports = class TViewPort {
         )
         .replace(
           /\{\{::item\.name\}\}<\/div><\/div><\/li>/g,
-          '{{::item.name}}</div></div></li><li tabindex="-1" ng-focus="displayInfo(false)" class="board-item ng-scope tv-discovery-all" style="display: flex;justify-content: center;align-items: center;font-size: 2rem;" ui-sref="discover({ transportUrl: result.addon.transportUrl, type: result.type, catalog: result.id, genre: null })"><span>{{translate("BUTTON_SEE_ALL")}}<svg icon="chevron-forward" class="icon" viewBox="0 0 512 512"><path d="M184 400l144-144-144-144" style="stroke:currentcolor;stroke-linecap:round;stroke-linejoin:round;stroke-width:48;fill:none"></path></svg></span></li>'
+          '{{::item.name}}</div></div></li><li tabindex="-1" ng-focus="displayInfo(false)" class="board-item ng-scope tv-discovery-all" style="display: flex;justify-content: center;align-items: center;font-size: 3vh;" ui-sref="discover({ transportUrl: result.addon.transportUrl, type: result.type, catalog: result.id, genre: null })"><span>{{translate("BUTTON_SEE_ALL")}}<svg icon="chevron-forward" class="icon" viewBox="0 0 512 512"><path d="M184 400l144-144-144-144" style="stroke:currentcolor;stroke-linecap:round;stroke-linejoin:round;stroke-width:48;fill:none"></path></svg></span></li>'
         );
     });
 
@@ -780,7 +925,10 @@ module.exports = class TViewPort {
     const updateFocus = (newFocus) => {
       currentFocus = newFocus;
       if (currentFocus) {
-        currentFocus.focus({ preventScroll: false });
+        const preventScroll = currentFocus.matches(
+          "#board .board-container > li,#board .board-container li .board-row li"
+        );
+        currentFocus.focus({ preventScroll });
       }
     };
 
@@ -832,21 +980,30 @@ module.exports = class TViewPort {
         if (
           nextFocus &&
           !window.TViewPort.debounceScroll &&
-          nextFocus.matches("#board .board-container li .board-row li")
-        )
-          if (["ArrowUp", "ArrowDown"].includes(event.key)) {
-            window.TViewPort.debounceScroll = true;
-            setTimeout(() => (window.TViewPort.debounceScroll = false), 450);
-          } else if (["ArrowLeft", "ArrowRight"].includes(event.key)) {
-            window.TViewPort.debounceScroll = true;
+          nextFocus.matches("#board .board-container li .board-row li") &&
+          directions.includes(event.key)
+        ) {
+          const debounce =
+            navigator.userAgent.includes("Chrome") ||
+            !navigator.userAgent.includes("Gecko");
+          window.TViewPort.debounceScroll = debounce;
+          if (debounce)
             setTimeout(() => (window.TViewPort.debounceScroll = false), 200);
-          }
+        }
       } else if (
         event.key === "Enter" &&
         document.activeElement &&
         document.activeElement.matches("div > select")
       ) {
-        document.activeElement.dispatchEvent(new MouseEvent("mousedown"));
+        event.preventDefault();
+        window.TViewPort.openCustomSelect(document.activeElement);
+      } else if (
+        event.key === "Enter" &&
+        document.activeElement &&
+        document.activeElement.matches("div > input[type='color']")
+      ) {
+        event.preventDefault();
+        window.TViewPort.openCustomColorGridPicker(document.activeElement);
       }
     });
 
@@ -856,6 +1013,10 @@ module.exports = class TViewPort {
         currentFocus = document.activeElement;
       }
 
+      document.querySelectorAll("div > input[type='color']").forEach((el) => {
+        el.onclick = (e) => e.preventDefault();
+      });
+
       const focusableElementsY = document.querySelectorAll(
         "#board .board-container > li"
       );
@@ -864,10 +1025,10 @@ module.exports = class TViewPort {
       );
 
       const alignToTop = (el) =>
-        el.parentElement.scrollTo({ top: el.offsetTop });
+        el.parentElement.scrollTo({ top: el.offsetTop, behavior: "smooth" });
 
       const alignToLeft = (el) =>
-        el.parentElement.scrollTo({ left: el.offsetLeft });
+        el.parentElement.scrollTo({ left: el.offsetLeft, behavior: "smooth" });
 
       focusableElementsY.forEach((el) => {
         if (!el.tvFocusInjected) {
@@ -887,20 +1048,287 @@ module.exports = class TViewPort {
     observer.observe(document.body, { childList: true, subtree: true });
     window.TViewPort.load = true;
   };
+
+  openCustomSelect = (selectEl) => {
+    const existing = document.querySelector(".tv-custom-select-container");
+    if (existing) existing.remove();
+
+    const selectRect = selectEl.getBoundingClientRect();
+
+    const container = document.createElement("div");
+    container.classList.add("tv-custom-select-container");
+    container.style.left = selectRect.left + "px";
+    container.style.width = selectRect.width + "px";
+
+    const options = Array.from(selectEl.options);
+    options.forEach((opt, index) => {
+      const optionDiv = document.createElement("div");
+      optionDiv.classList.add("tv-custom-select-option");
+      optionDiv.textContent = opt.text;
+      optionDiv.setAttribute("data-value", opt.value);
+
+      if (opt.selected) {
+        optionDiv.classList.add("tv-selected", "tv-focused");
+        container.currentIndex = index;
+      }
+
+      optionDiv.addEventListener("click", () => {
+        if (container.isConnected) container.remove();
+        window.TViewPort.updateSelectAndClose(selectEl, optionDiv);
+      });
+
+      container.appendChild(optionDiv);
+    });
+
+    if (!container.querySelector(".tv-custom-select-option.tv-focused")) {
+      container
+        .querySelector(".tv-custom-select-option:first-child")
+        .classList.add("tv-focused");
+      container.currentIndex = 0;
+    }
+
+    document.body.appendChild(container);
+
+    function repositionContainer() {
+      const focusedOption = container.querySelector(
+        ".tv-custom-select-option.tv-focused"
+      );
+      if (focusedOption)
+        container.style.top = selectRect.top - focusedOption.offsetTop + "px";
+    }
+
+    repositionContainer();
+
+    container.addEventListener("blur", () =>
+      setTimeout(() => (container.isConnected ? container.remove() : null), 5)
+    );
+
+    container.addEventListener("keydown", (e) => {
+      const optionNodes = Array.from(
+        container.querySelectorAll(".tv-custom-select-option")
+      );
+      let currentIndex = optionNodes.findIndex((el) =>
+        el.classList.contains("tv-focused")
+      );
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (currentIndex < optionNodes.length - 1) {
+          optionNodes[currentIndex].classList.remove("tv-focused");
+          currentIndex++;
+          optionNodes[currentIndex].classList.add("tv-focused");
+          repositionContainer();
+        }
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (currentIndex > 0) {
+          optionNodes[currentIndex].classList.remove("tv-focused");
+          currentIndex--;
+          optionNodes[currentIndex].classList.add("tv-focused");
+          repositionContainer();
+        }
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        setTimeout(() =>
+          document.querySelector(".tv-custom-select-option.tv-focused").click()
+        );
+        const chosenOption = optionNodes[currentIndex];
+        window.TViewPort.updateSelectAndClose(selectEl, chosenOption);
+      } else if (e.key === "Escape") {
+        if (container.isConnected) container.remove();
+        selectEl.focus();
+      }
+    });
+
+    container.setAttribute("tabindex", "-1");
+    container.focus();
+  };
+
+  updateSelectAndClose = (selectEl, chosenOption) => {
+    selectEl.value = chosenOption.getAttribute("data-value");
+
+    const event = new Event("change", { bubbles: true });
+    selectEl.dispatchEvent(event);
+    selectEl.focus();
+  };
+
+  openCustomColorGridPicker = (inputEl) => {
+    const existing = document.querySelector(".tv-custom-color-container");
+    if (existing) existing.remove();
+
+    const colorMatrix = [
+      [
+        "#FFFFFF",
+        "#241F31",
+        "#1A5FB4",
+        "#26A269",
+        "#E5A50A",
+        "#C64600",
+        "#A51D2D",
+        "#613583",
+        "#63452C",
+      ],
+      [
+        "#000000",
+        "#5E5C64",
+        "#1C71D8",
+        "#2EC27E",
+        "#F5C211",
+        "#E66100",
+        "#C01C28",
+        "#813D9C",
+        "#865E3C",
+      ],
+      [
+        "#FFFF00",
+        "#7D7C82",
+        "#3584E4",
+        "#33D17A",
+        "#F6D32D",
+        "#FF7800",
+        "#E01B24",
+        "#9141AC",
+        "#986A44",
+      ],
+      [
+        "#ff0000",
+        "#9A9996",
+        "#62A0EA",
+        "#57E389",
+        "#F8E45C",
+        "#FFA348",
+        "#ED333B",
+        "#C061CB",
+        "#B5835A",
+      ],
+      [
+        "#ADFF2F",
+        "#DEDDDA",
+        "#99C1F1",
+        "#8FF0A4",
+        "#F9F06B",
+        "#FFBE6F",
+        "#F66151",
+        "#DC8ADD",
+        "#CDAB8F",
+      ],
+    ];
+
+    const container = document.createElement("div");
+    container.classList.add("tv-custom-color-container");
+
+    const grid = document.createElement("div");
+    grid.classList.add("tv-custom-color-grid");
+
+    let currentRow = 0;
+    let currentCol = 0;
+
+    colorMatrix.forEach((row, rowIndex) => {
+      row.forEach((color, colIndex) => {
+        const swatch = document.createElement("div");
+        swatch.classList.add("tv-custom-color-swatch");
+        swatch.style.backgroundColor = color;
+        swatch.setAttribute("data-color", color);
+        swatch.setAttribute("data-row", rowIndex);
+        swatch.setAttribute("data-col", colIndex);
+
+        if (color.toLowerCase() === inputEl.value.toLowerCase()) {
+          swatch.classList.add("tv-selected", "tv-focused");
+          currentRow = rowIndex;
+          currentCol = colIndex;
+        }
+
+        swatch.addEventListener("click", () => {
+          if (container.isConnected) container.remove();
+          window.TViewPort.updateInputColorAndClose(inputEl, color);
+        });
+
+        grid.appendChild(swatch);
+      });
+    });
+
+    if (!grid.querySelector(".tv-custom-color-swatch.tv-focused")) {
+      grid
+        .querySelector(".tv-custom-color-swatch:first-child")
+        .classList.add("tv-focused");
+      currentRow = 0;
+      currentCol = 0;
+    }
+
+    container.appendChild(grid);
+    inputEl.parentElement.appendChild(container);
+    container.scrollIntoView(false);
+
+    container.addEventListener("blur", () =>
+      setTimeout(() => (container.isConnected ? container.remove() : null), 5)
+    );
+
+    container.addEventListener("keydown", (e) => {
+      e.preventDefault();
+      if (e.key === "ArrowUp") {
+        currentRow = Math.max(0, currentRow - 1);
+      } else if (e.key === "ArrowDown") {
+        currentRow = Math.min(colorMatrix.length - 1, currentRow + 1);
+      } else if (e.key === "ArrowLeft") {
+        currentCol = Math.max(0, currentCol - 1);
+      } else if (e.key === "ArrowRight") {
+        currentCol = Math.min(colorMatrix[0].length - 1, currentCol + 1);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        setTimeout(() =>
+          document.querySelector(".tv-custom-color-swatch.tv-focused").click()
+        );
+
+        const color = colorMatrix[currentRow][currentCol];
+        window.TViewPort.updateInputColorAndClose(inputEl, color);
+        return;
+      } else if (e.key === "Escape") {
+        if (container.isConnected) container.remove();
+        inputEl.focus();
+        return;
+      }
+
+      const swatches = Array.from(
+        grid.querySelectorAll(".tv-custom-color-swatch")
+      );
+      swatches.forEach((swatch) => swatch.classList.remove("tv-focused"));
+
+      const newFocusSwatch = swatches.find(
+        (swatch) =>
+          parseInt(swatch.getAttribute("data-row")) === currentRow &&
+          parseInt(swatch.getAttribute("data-col")) === currentCol
+      );
+      if (newFocusSwatch) newFocusSwatch.classList.add("tv-focused");
+    });
+
+    container.setAttribute("tabindex", "-1");
+    container.focus();
+  };
+
+  updateInputColorAndClose = (inputEl, chosenColor) => {
+    inputEl.value = chosenColor;
+
+    const event = new Event("input", { bubbles: true });
+    inputEl.dispatchEvent(event);
+    inputEl.focus();
+  };
+
   styles = `/**
  * @name TV Theme
  * @description A better Stremio experience for SmartTVs. Improve your Stremio experience with a more friendly TV layout.
- * @updateUrl
  * @version 1.0.0
  * @author MateusAquino
  */
 
+* {
+  outline: none;
+}
+
 :root {
-  --navbar-width: 8rem;
+  --navbar-width: 11ch;
 }
 
 body #topbar .logo {
-  height: 8rem;
+  height: calc(2.1 * 8vh);
 }
 
 [ui-view] {
@@ -928,7 +1356,7 @@ body #topbar .logo {
 #sidebar-handle,
 #search-dropdown,
 #settings-shortcuts,
-#settings-user-prefs .category:nth-child(2),
+#settings-user-prefs > div:nth-child(2) > div:nth-child(6),
 #board .board-container li .board-row li .info {
   display: none !important;
 }
@@ -955,7 +1383,7 @@ body #topbar .logo {
 }
 
 [ng-controller="searchCtrl"] {
-  padding-top: 1rem !important;
+  padding-top: 1vh !important;
 }
 
 #player .sidebar {
@@ -967,7 +1395,7 @@ body #topbar .logo {
 }
 
 #board {
-  padding-top: 3rem;
+  padding-top: 3vh;
 }
 
 #board .board-container {
@@ -977,11 +1405,11 @@ body #topbar .logo {
     rgba(255, 255, 255, 0.3) 30%,
     rgba(255, 255, 255, 1) 40%
   );
-  height: calc(100vh - 35vh - var(--topbar-height));
+  height: calc(61.5vh - 20px);
   padding-bottom: 50vh;
   scroll-snap-type: y mandatory;
   scroll-behavior: smooth !important;
-  overflow-y: hidden;
+  overflow: hidden;
 }
 
 #board .board-container > li {
@@ -1000,7 +1428,7 @@ body #topbar .logo {
 
 #board .board-container li .board-row li {
   height: 100% !important;
-  width: 21vh !important;
+  width: 20vh !important;
   scroll-snap-align: start;
   scroll-margin-left: 18px;
 }
@@ -1052,42 +1480,43 @@ body #topbar .logo {
 
 #tv-board-info {
   height: 35vh;
-  margin-top: 0.75rem;
+  margin-top: 0.5vh;
 }
 
 #tv-board-info h2 {
-  font-size: 3.3em;
-  margin-bottom: 1.1rem;
-  padding-right: 13rem;
+  font-size: min(max(7vh, 3vw), 6vh);
+  margin-top: 20px;
+  margin-bottom: calc(1.5 * 1.1vh);
+  padding-right: calc(1.5 * 13vh);
   overflow: hidden;
   white-space: pre;
   text-overflow: ellipsis;
 }
 
 #tv-board-info-tag {
-  font-size: 1.1em;
-  margin-bottom: 1.1rem;
+  font-size: min(max(2.15vh, 1.25vw), 3vh);
+  margin-bottom: calc(1.5 * 1.1vh);
 }
 
 #tv-board-info-tag span {
-  margin-right: 2rem;
+  margin-right: calc(1.5 * 2vh);
 }
 
 #tv-board-desc {
   width: 40vw;
   display: block;
-  font-size: 1.2em;
-  margin-bottom: 1.1rem;
+  font-size: min(max(2.1vh, 1.2vw), 2.8vh);
+  margin-bottom: calc(1.5 * 1.1vh);
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 6;
+  -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
 }
 
 #tv-board-cast {
   color: gray;
-  font-size: 1.2em;
-  padding-right: 13rem;
+  font-size: min(max(1.8vh, 0.9vw), 2.5vh);
+  padding-right: calc(1.5 * 13vh);
   overflow: hidden;
   white-space: pre;
   text-overflow: ellipsis;
@@ -1095,6 +1524,7 @@ body #topbar .logo {
 }
 
 div.control:focus,
+#bs-close-sidebar:focus,
 [ng-click="playerGoBack()"]:focus,
 [ng-click="goBack()"]:focus > .button {
   box-shadow: 0 0 0 2pt #ffffff !important;
@@ -1114,17 +1544,112 @@ input[ng-player-progress="progressTime"]:focus::-moz-range-thumb {
   box-shadow: 0 0 0 2pt #ffffff !important;
 }
 
+input[type="color"]:focus {
+    box-shadow: 0 0 0 1.5pt #ffffff !important;
+    border-radius: 5px !important;
+}
+
 #board .board-container li .board-row li .image .placeholder {
   background-position: center;
 }
 
-#board .board-container li .board-row {
-  padding-bottom: calc(2.5rem + 1.5rem);
+#board .board-container li .board-row,
+#board .board-container li .board-row.show-title {
+  padding-bottom: 4.0vh;
 }
 
 #board .board-container li .board-row li:focus {
   -webkit-box-shadow: 0 0 0 0.17rem #fff !important;
   box-shadow: 0 0 0 0.17rem #fff !important;
 }
-    `;
+
+.tv-custom-select-container {
+  position: fixed;
+  background: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 9999;
+  padding: 0;
+  margin: 0;
+  background-color: #0f0d26;
+  color: white;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: top ease 0.2s;
+}
+
+.tv-custom-select-option {
+  text-transform: capitalize;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.tv-custom-select-option.tv-selected {
+    background-color: #0078d740;
+}
+
+.tv-custom-select-option:hover,
+.tv-custom-select-option.tv-focused {
+  background-color: #0078d7;
+  color: #fff;
+}
+
+.settings-container .settings-panel section .category .setting .custom-color {
+  position: relative;
+}
+
+.tv-custom-color-container {
+  position: absolute;
+  background: #0f0d26;
+  border: 1px solid #090720;
+  box-shadow: 0 0 4px 4pt rgb(0 0 0 / 21%);
+  z-index: 9999;
+  padding: 8px;
+  margin: 0;
+  width: fit-content;
+  right: 0;
+}
+
+.tv-custom-color-grid {
+  display: inline-grid;
+  grid-auto-rows: 40px;
+  grid-template-columns: repeat(9, 40px);
+  gap: 4px;
+}
+
+.tv-custom-color-swatch {
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  box-sizing: border-box;
+  transition: transform ease 0.1s;
+}
+
+.tv-custom-color-swatch.tv-focused {
+  transform: scale(1.1);
+  border-color: #0078d7;
+}
+
+@media (max-height: 670px) {
+  :root {
+    --navbar-width: 7ch;
+  }
+
+  body #navbar {
+    zoom: 0.8;
+    width: 10ch;
+  }
+
+  body #topbar .logo {
+    zoom: 0.8;
+    height: calc(2.5* 8vh);
+    width: 10ch;
+  }
+
+  #tv-board-desc {
+    -webkit-line-clamp: 4;
+  }
+}`;
 };
